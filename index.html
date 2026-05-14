@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <title>Controle de Despesas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Controle de Despesas</h1>
+
+    <div class="layout">
+        <aside class="side-menu">
+            <h2>Filtrar</h2>
+
+            <div class="filter-section">
+                <h3>Categorias</h3>
+                <nav>
+                    <a href="{{ url_for('home', mes=mes_selecionado) }}"
+                       class="{{ 'active' if not categoria_selecionada else '' }}">Todas</a>
+                    {% for categoria in categorias %}
+                        <a href="{{ url_for('home', categoria=categoria, mes=mes_selecionado) }}"
+                           class="{{ 'active' if categoria_selecionada == categoria else '' }}">
+                            {{ categoria }}
+                        </a>
+                    {% endfor %}
+                </nav>
+            </div>
+
+            <div class="filter-section">
+                <h3>Meses</h3>
+                <nav>
+                    <a href="{{ url_for('home', categoria=categoria_selecionada) }}"
+                       class="{{ 'active' if not mes_selecionado else '' }}">Todos</a>
+                    {% for mes in meses %}
+                        <a href="{{ url_for('home', categoria=categoria_selecionada, mes=mes) }}"
+                           class="{{ 'active' if mes_selecionado == mes else '' }}">
+                            {{ mes }}
+                        </a>
+                    {% endfor %}
+                </nav>
+            </div>
+        </aside>
+
+        <div class="right-panel">
+            <section class="form-card">
+                <h2>Adicionar Despesa</h2>
+                <form action="{{ url_for('post_despesas') }}" method="post">
+                    <label>Descrição:
+                        <input type="text" name="descricao" required>
+                    </label>
+
+                    <label>Valor:
+                        <input type="number" step="0.01" name="valor" required>
+                    </label>
+
+                    <label>Categoria:
+                        <select name="categoria" id="categoria" onchange="toggleOutraCategoria()" required>
+                            <option value="" disabled selected>Selecione uma categoria</option>
+                            {% for categoria in categorias %}
+                                <option value="{{ categoria }}">{{ categoria }}</option>
+                            {% endfor %}
+                            <option value="Outros">Outro</option>
+                        </select>
+                    </label>
+
+                    <div id="outra-categoria" class="hidden">
+                        <label>Outra categoria:
+                            <input type="text" name="categoria_outra" id="categoria_outra">
+                        </label>
+                    </div>
+
+                    <label>Mês:
+                        <select name="mes" required>
+                            <option value="" disabled selected>Selecione o mês</option>
+                            {% for mes in meses %}
+                                <option value="{{ mes }}">{{ mes }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <button type="submit">Adicionar</button>
+                </form>
+            </section>
+
+            <section class="expenses-card">
+                <div class="expenses-header">
+                    <h2>Despesas{% if categoria_selecionada %} — {{ categoria_selecionada }}{% endif %}{% if mes_selecionado %} — {{ mes_selecionado }}{% endif %}</h2>
+                    {% if despesas %}
+                        <form action="{{ url_for('limpar_despesas') }}" method="post">
+                            <button type="submit" class="danger">Limpar todas</button>
+                        </form>
+                    {% endif %}
+                </div>
+
+                {% if grupos %}
+                    {% for grupo in grupos %}
+                        <article class="expense-group">
+                            <h3>{{ grupo.nome }} — Total: R$ {{ '%.2f'|format(grupo.total) }}</h3>
+                            <ul>
+                                {% for despesa in grupo.despesas %}
+                                    <li>
+                                        <div class="expense-item">
+                                            <span>{{ despesa.id }} - {{ despesa.descricao }} | R$ {{ '%.2f'|format(despesa.valor) }} | {{ despesa.mes }}</span>
+                                            <form action="{{ url_for('excluir_despesa', despesa_id=despesa.id, categoria=categoria_selecionada, mes=mes_selecionado) }}" method="post">
+                                                <button type="submit" class="delete-button">Excluir</button>
+                                            </form>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </article>
+                    {% endfor %}
+                    <p class="total-geral"><strong>Total geral: R$ {{ '%.2f'|format(total) }}</strong></p>
+                {% else %}
+                    <p>Nenhuma despesa cadastrada ainda.</p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+
+    <script>
+        function toggleOutraCategoria() {
+            var select = document.getElementById('categoria');
+            var outro = document.getElementById('outra-categoria');
+            var inputOutro = document.getElementById('categoria_outra');
+
+            if (select.value === 'Outros') {
+                outro.classList.remove('hidden');
+                inputOutro.required = true;
+            } else {
+                outro.classList.add('hidden');
+                inputOutro.required = false;
+                inputOutro.value = '';
+            }
+        }
+    </script>
+</body>
+</html>
